@@ -10,7 +10,15 @@ import {
 
 // Article Fetching
 export const getArticles = async (
-  params?: PaginationParams & { language?: string; category?: string; tag?: string }
+  params?: PaginationParams & { 
+    language?: string; 
+    category?: string; 
+    tag?: string;
+    sortBy?: 'publishedAt' | 'viewCount' | 'createdAt';
+    order?: 'asc' | 'desc';
+    isTrending?: boolean;
+    isBreaking?: boolean;
+  }
 ): Promise<PaginatedResponse<Article>> => {
   const response = await api.get('/articles', { params });
   return response.data;
@@ -127,9 +135,17 @@ export const deleteComment = async (commentId: string): Promise<void> => {
 // Reading History
 export const getReadingHistory = async (
   params?: PaginationParams
-): Promise<PaginatedResponse<Article>> => {
+): Promise<PaginatedResponse<Article & { readAt: string }>> => {
   const response = await api.get('/interactions/reading-history', { params });
   return response.data;
+};
+
+export const addToReadingHistory = async (articleId: string): Promise<void> => {
+  await api.post(`/interactions/reading-history/${articleId}`);
+};
+
+export const clearReadingHistory = async (): Promise<void> => {
+  await api.delete('/interactions/reading-history');
 };
 
 // Article Management (for admin/author)
@@ -145,4 +161,32 @@ export const updateArticle = async (id: string, data: Partial<ArticleInput>): Pr
 
 export const deleteArticle = async (id: string): Promise<void> => {
   await api.delete(`/articles/${id}`);
+};
+
+// Admin specific functions
+export const toggleArticlePublish = async (id: string, published: boolean): Promise<Article> => {
+  const response = await api.put(`/admin/articles/${id}/publish`, { published });
+  return response.data.data;
+};
+
+export const toggleArticleTrending = async (id: string, isTrending: boolean): Promise<Article> => {
+  const response = await api.put(`/admin/articles/${id}/trending`, { isTrending });
+  return response.data.data;
+};
+
+export const toggleArticleBreaking = async (id: string, isBreaking: boolean): Promise<Article> => {
+  const response = await api.put(`/admin/articles/${id}/breaking`, { isBreaking });
+  return response.data.data;
+};
+
+// Bulk operations
+export const bulkDeleteArticles = async (articleIds: string[]): Promise<void> => {
+  await api.delete('/admin/articles/bulk', { data: { articleIds } });
+};
+
+export const bulkUpdateArticles = async (
+  articleIds: string[], 
+  updates: Partial<ArticleInput>
+): Promise<void> => {
+  await api.put('/admin/articles/bulk', { articleIds, updates });
 };

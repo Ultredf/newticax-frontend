@@ -2,3 +2,7 @@ onlyBuiltDependencies:
   - '@tailwindcss/oxide'
   - sharp
   - unrs-resolver
+
+packages:
+  - 'newticax-frontend'
+  - 'newticax-backend'

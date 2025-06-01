@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
 import { syncNewsAPI } from '@/services/admin-service';
+import { getCategories } from '@/services/category-service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -26,8 +27,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { toast } from 'sonner';
-import { AlertCircle, CheckCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
 
 const syncFormSchema = z.object({
   categories: z.array(z.string()).min(1, 'Select at least one category'),
@@ -36,15 +38,15 @@ const syncFormSchema = z.object({
 
 type SyncFormValues = z.infer<typeof syncFormSchema>;
 
-// Available categories from NewsAPI
-const AVAILABLE_CATEGORIES = [
-  { id: 'general', label: 'General' },
-  { id: 'business', label: 'Business' },
-  { id: 'technology', label: 'Technology' },
-  { id: 'entertainment', label: 'Entertainment' },
-  { id: 'health', label: 'Health' },
-  { id: 'science', label: 'Science' },
-  { id: 'sports', label: 'Sports' },
+// NewsAPI category mapping
+const NEWS_API_CATEGORIES = [
+  { id: 'general', label: 'General', description: 'General news and current events' },
+  { id: 'business', label: 'Business', description: 'Business and financial news' },
+  { id: 'technology', label: 'Technology', description: 'Technology and innovation news' },
+  { id: 'entertainment', label: 'Entertainment', description: 'Entertainment and celebrity news' },
+  { id: 'health', label: 'Health', description: 'Health and medical news' },
+  { id: 'science', label: 'Science', description: 'Science and research news' },
+  { id: 'sports', label: 'Sports', description: 'Sports news and updates' },
 ];
 
 export default function SyncNewsAPIPage() {
@@ -60,6 +62,16 @@ export default function SyncNewsAPIPage() {
     redirectTo: '/dashboard',
   });
 
+  // Fetch existing categories from database
+  const { 
+    data: existingCategories, 
+    isLoading: isCategoriesLoading,
+    refetch: refetchCategories 
+  } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => getCategories({ limit: 100 }),
+  });
+
   // Form setup
   const form = useForm<SyncFormValues>({
     resolver: zodResolver(syncFormSchema),
@@ -70,14 +82,16 @@ export default function SyncNewsAPIPage() {
   });
 
   // Sync mutation
-  const { mutate, isLoading } = useMutation({
+  const { mutate, isPending } = useMutation({
     mutationFn: syncNewsAPI,
     onSuccess: (data) => {
       toast.success(`Successfully synced ${data.totalSynced} articles`);
       setSyncResult(data);
+      // Refetch categories in case new ones were created during sync
+      refetchCategories();
     },
-    onError: () => {
-      toast.error('Failed to sync news from API');
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to sync news from API');
     },
   });
 
@@ -90,19 +104,31 @@ export default function SyncNewsAPIPage() {
     mutate(values);
   };
 
+  if (isCategoriesLoading) {
+    return (
+      <div className="flex justify-center py-12">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Sync External News</h1>
         <p className="text-muted-foreground">
-          Import news articles from external API
+          Import news articles from external NewsAPI.org based on categories and language
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Sync Form */}
         <Card>
           <CardHeader>
-            <CardTitle>NewsAPI Sync</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <RefreshCw className="h-5 w-5" />
+              NewsAPI Sync
+            </CardTitle>
             <CardDescription>
               Import news articles from NewsAPI.org based on categories and language
             </CardDescription>
@@ -144,13 +170,13 @@ export default function SyncNewsAPIPage() {
                   render={() => (
                     <FormItem>
                       <div className="mb-4">
-                        <FormLabel>Categories</FormLabel>
+                        <FormLabel>NewsAPI Categories</FormLabel>
                         <FormDescription>
-                          Select categories to import
+                          Select categories to import from NewsAPI
                         </FormDescription>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        {AVAILABLE_CATEGORIES.map((category) => (
+                      <div className="grid grid-cols-1 gap-3">
+                        {NEWS_API_CATEGORIES.map((category) => (
                           <FormField
                             key={category.id}
                             control={form.control}
@@ -159,7 +185,7 @@ export default function SyncNewsAPIPage() {
                               return (
                                 <FormItem
                                   key={category.id}
-                                  className="flex flex-row items-start space-x-3 space-y-0"
+                                  className="flex flex-row items-start space-x-3 space-y-0 border rounded-lg p-3"
                                 >
                                   <FormControl>
                                     <Checkbox
@@ -175,9 +201,14 @@ export default function SyncNewsAPIPage() {
                                       }}
                                     />
                                   </FormControl>
-                                  <FormLabel className="font-normal">
-                                    {category.label}
-                                  </FormLabel>
+                                  <div className="space-y-1 leading-none">
+                                    <FormLabel className="font-medium cursor-pointer">
+                                      {category.label}
+                                    </FormLabel>
+                                    <FormDescription className="text-xs">
+                                      {category.description}
+                                    </FormDescription>
+                                  </div>
                                 </FormItem>
                               )
                             }}
@@ -189,14 +220,22 @@ export default function SyncNewsAPIPage() {
                   )}
                 />
 
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? 'Syncing...' : 'Start Sync'}
+                <Button type="submit" disabled={isPending} className="w-full">
+                  {isPending ? (
+                    <>
+                      <LoadingSpinner className="mr-2 h-4 w-4" />
+                      Syncing...
+                    </>
+                  ) : (
+                    'Start Sync'
+                  )}
                 </Button>
               </form>
             </Form>
           </CardContent>
         </Card>
 
+        {/* Sync Results */}
         <Card>
           <CardHeader>
             <CardTitle>Sync Results</CardTitle>
@@ -231,6 +270,7 @@ export default function SyncNewsAPIPage() {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-40 text-gray-500">
+                <RefreshCw className="h-8 w-8 mb-2" />
                 <p>No recent sync results</p>
                 <p className="text-sm mt-2">Run a sync to see results here</p>
               </div>
@@ -238,6 +278,33 @@ export default function SyncNewsAPIPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Existing Categories Info */}
+      {existingCategories?.data && existingCategories.data.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Existing Categories</CardTitle>
+            <CardDescription>
+              Categories currently available in your system
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+              {existingCategories.data.map((category) => (
+                <div 
+                  key={category.id}
+                  className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded-md"
+                >
+                  <span className="text-sm font-medium">{category.name}</span>
+                  <span className="text-xs text-gray-500">
+                    {category._count?.articles || 0} articles
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

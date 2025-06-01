@@ -19,7 +19,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       isLoading: false,
       isAuthenticated: false,
@@ -30,10 +30,13 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ isLoading: true });
           const response = await api.get('/auth/me');
+          const userData = response.data.data;
+          
           set({
             isLoading: false,
-            user: response.data.data,
+            user: userData,
             isAuthenticated: true,
+            language: userData.language || 'ENGLISH', // Update language from user data
           });
         } catch (error) {
           set({
@@ -48,10 +51,13 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ isLoading: true, error: null });
           const response = await api.post('/auth/login', data);
+          const userData = response.data.data;
+          
           set({
             isLoading: false,
-            user: response.data.data,
+            user: userData,
             isAuthenticated: true,
+            language: userData.language || 'ENGLISH',
           });
           return response.data;
         } catch (error: any) {
@@ -67,10 +73,13 @@ export const useAuthStore = create<AuthState>()(
         try {
           set({ isLoading: true, error: null });
           const response = await api.post('/auth/register', data);
+          const userData = response.data.data;
+          
           set({
             isLoading: false,
-            user: response.data.data,
+            user: userData,
             isAuthenticated: true,
+            language: userData.language || data.language || 'ENGLISH',
           });
           return response.data;
         } catch (error: any) {
@@ -85,24 +94,42 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         try {
           await api.post('/auth/logout');
+        } catch (error) {
+          console.error('Logout error:', error);
+        } finally {
           set({
             user: null,
             isAuthenticated: false,
+            error: null,
           });
-        } catch (error) {
-          console.error('Logout error:', error);
         }
       },
       
       setLanguage: async (language) => {
+        const currentState = get();
         set({ language });
+        
         try {
           // If user is authenticated, update language preference on server
-          if (useAuthStore.getState().isAuthenticated) {
-            await api.put('/auth/language', { language });
+          if (currentState.isAuthenticated) {
+            await api.put('/auth/preferences', { language });
+            
+            // Update user object with new language
+            if (currentState.user) {
+              set({
+                user: {
+                  ...currentState.user,
+                  language
+                }
+              });
+            }
           }
         } catch (error) {
           console.error('Failed to update language preference:', error);
+          // Revert language on error if user was authenticated
+          if (currentState.isAuthenticated) {
+            set({ language: currentState.language });
+          }
         }
       },
       

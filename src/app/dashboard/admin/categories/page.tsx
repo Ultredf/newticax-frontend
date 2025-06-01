@@ -1,9 +1,8 @@
-// src/app/dashboard/admin/categories/page.tsx (new file)
 'use client';
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCategories, createCategory, updateCategory, deleteCategory } from '@/services/category-service';
+import { getAdminCategories, createCategory, updateCategory, deleteCategory } from '@/services/category-service';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -43,7 +42,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Search } from 'lucide-react';
 import { Category } from '@/types';
 
 const categorySchema = z.object({
@@ -76,8 +75,8 @@ export default function AdminCategoriesPage() {
     data: categoriesData, 
     isLoading
   } = useQuery({
-    queryKey: ['categories', page, search],
-    queryFn: () => getCategories({ page, limit: 10, search }),
+    queryKey: ['adminCategories', page, search],
+    queryFn: () => getAdminCategories({ page, limit: 12, search }),
   });
 
   // Forms
@@ -103,13 +102,14 @@ export default function AdminCategoriesPage() {
   const createMutation = useMutation({
     mutationFn: createCategory,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['adminCategories'] });
+      queryClient.invalidateQueries({ queryKey: ['categories'] }); // Also invalidate public categories
       toast.success('Category created successfully');
       setIsAddDialogOpen(false);
       addForm.reset();
     },
-    onError: () => {
-      toast.error('Failed to create category');
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to create category');
     }
   });
 
@@ -117,19 +117,21 @@ export default function AdminCategoriesPage() {
     mutationFn: ({ id, data }: { id: string; data: CategoryFormValues }) => 
       updateCategory(id, data),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminCategories'] });
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       toast.success('Category updated successfully');
       setEditingCategory(null);
       editForm.reset();
     },
-    onError: () => {
-      toast.error('Failed to update category');
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to update category');
     }
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteCategory,
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminCategories'] });
       queryClient.invalidateQueries({ queryKey: ['categories'] });
       toast.success('Category deleted successfully');
       setCategoryToDelete(null);
@@ -176,6 +178,7 @@ export default function AdminCategoriesPage() {
   // Handle page change
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -261,12 +264,15 @@ export default function AdminCategoriesPage() {
         <CardContent>
           <div className="mb-4">
             <form onSubmit={handleSearch} className="flex gap-2">
-              <Input
-                placeholder="Search categories..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="max-w-sm"
-              />
+              <div className="relative flex-1">
+                <Input
+                  placeholder="Search categories..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  className="pr-10"
+                />
+                <Search className="absolute right-3 top-2.5 h-4 w-4 text-gray-400" />
+              </div>
               <Button type="submit">Search</Button>
             </form>
           </div>
@@ -281,7 +287,7 @@ export default function AdminCategoriesPage() {
                 {categoriesData.data.map((category) => (
                   <div 
                     key={category.id} 
-                    className="border rounded-lg overflow-hidden"
+                    className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow"
                   >
                     {category.image && (
                       <div className="h-40 overflow-hidden">
@@ -295,7 +301,7 @@ export default function AdminCategoriesPage() {
                     <div className="p-4">
                       <h3 className="font-medium text-lg mb-1">{category.name}</h3>
                       {category.description && (
-                        <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
+                        <p className="text-gray-600 dark:text-gray-400 text-sm mb-2 line-clamp-2">
                           {category.description}
                         </p>
                       )}

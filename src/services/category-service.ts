@@ -1,10 +1,11 @@
 import api from '@/lib/api';
 import { Category, PaginatedResponse, PaginationParams } from '@/types';
 
+// Public endpoints - no auth required
 export const getCategories = async (
   params?: PaginationParams & { search?: string }
 ): Promise<PaginatedResponse<Category>> => {
-  const response = await api.get('/admin/categories', { params });
+  const response = await api.get('/categories', { params });
   return response.data;
 };
 
@@ -13,6 +14,7 @@ export const getCategoryBySlug = async (slug: string): Promise<Category> => {
   return response.data.data;
 };
 
+// Admin endpoints - auth required
 export const createCategory = async (data: {
   name: string;
   description?: string;
@@ -32,4 +34,12 @@ export const updateCategory = async (
 
 export const deleteCategory = async (id: string): Promise<void> => {
   await api.delete(`/admin/categories/${id}`);
+};
+
+// Admin-specific category fetch (with more detailed info)
+export const getAdminCategories = async (
+  params?: PaginationParams & { search?: string }
+): Promise<PaginatedResponse<Category>> => {
+  const response = await api.get('/admin/categories', { params });
+  return response.data;
 };

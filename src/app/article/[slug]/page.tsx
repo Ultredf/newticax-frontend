@@ -3,8 +3,6 @@
 import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'next/navigation';
-import { format } from 'date-fns';
-import parse from 'html-react-parser';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/auth-store';
 import { 
@@ -31,7 +29,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export default function ArticlePage() {
   const { slug } = useParams();
-  const { isAuthenticated, language } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   
   // Fetch article
   const { 
@@ -51,7 +49,10 @@ export default function ArticlePage() {
     refetch: refetchComments
   } = useQuery({
     queryKey: ['comments', article?.id],
-    queryFn: () => article?.id ? getComments(article.id) : Promise.resolve({ data: [], pagination: { page: 1, limit: 10, total: 0, pages: 0 } }),
+    queryFn: () => article?.id ? getComments(article.id) : Promise.resolve({ 
+      data: [], 
+      pagination: { page: 1, limit: 10, total: 0, pages: 0 } 
+    }),
     enabled: !!article?.id,
   });
 

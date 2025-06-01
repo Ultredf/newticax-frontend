@@ -21,6 +21,7 @@ interface ArticleCommentsProps {
     pages: number;
   };
   onCommentAdded: () => void;
+  onPageChange?: (page: number) => void;
 }
 
 export function ArticleComments({ 
@@ -29,9 +30,12 @@ export function ArticleComments({
   isLoading,
   pagination,
   onCommentAdded,
+  onPageChange
 }: ArticleCommentsProps) {
   const [commentText, setCommentText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [replyTo, setReplyTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
   const { user, isAuthenticated } = useAuthStore();
   
   // Handle comment submission
@@ -50,6 +54,27 @@ export function ArticleComments({
       setIsSubmitting(false);
     }
   };
+
+  // Handle reply submission
+  const handleSubmitReply = async (parentId: string) => {
+    if (!replyText.trim()) return;
+    
+    try {
+      setIsSubmitting(true);
+      await addComment(articleId, { 
+        content: replyText, 
+        parentId 
+      });
+      setReplyText('');
+      setReplyTo(null);
+      toast.success('Reply added successfully');
+      onCommentAdded();
+    } catch (error) {
+      toast.error('Failed to add reply');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   
   // Get user initials for avatar
   const getInitials = (name: string = '') => {
@@ -61,9 +86,23 @@ export function ArticleComments({
       .substring(0, 2);
   };
 
+  // Handle pagination
+  const handlePageChange = (page: number) => {
+    if (onPageChange) {
+      onPageChange(page);
+    }
+    // Scroll to comments section
+    const commentsSection = document.getElementById('comments-section');
+    if (commentsSection) {
+      commentsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
-    <div className="mt-12">
-      <h2 className="text-2xl font-bold mb-6">Comments</h2>
+    <div id="comments-section" className="mt-12">
+      <h2 className="text-2xl font-bold mb-6">
+        Comments {pagination && `(${pagination.total})`}
+      </h2>
       
       {/* Comment Form */}
       {isAuthenticated ? (
@@ -79,6 +118,7 @@ export function ArticleComments({
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 className="mb-2"
+                rows={3}
               />
               <div className="flex justify-end">
                 <Button 
@@ -118,23 +158,66 @@ export function ArticleComments({
                       {format(new Date(comment.createdAt), 'MMM d, yyyy • h:mm a')}
                     </span>
                   </div>
-                  <p className="text-gray-700 dark:text-gray-300">{comment.content}</p>
+                  <p className="text-gray-700 dark:text-gray-300 mb-2">{comment.content}</p>
                   
                   {/* Reply button */}
                   {isAuthenticated && (
-                    <button className="text-sm text-blue-600 mt-2">Reply</button>
+                    <button 
+                      className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                      onClick={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
+                    >
+                      {replyTo === comment.id ? 'Cancel Reply' : 'Reply'}
+                    </button>
+                  )}
+
+                  {/* Reply Form */}
+                  {replyTo === comment.id && isAuthenticated && (
+                    <div className="mt-4 flex gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user?.image || ''} alt={user?.name || ''} />
+                        <AvatarFallback>{getInitials(user?.name)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <Textarea
+                          placeholder={`Reply to ${comment.user.name}...`}
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          className="mb-2"
+                          rows={2}
+                        />
+                        <div className="flex justify-end gap-2">
+                          <Button 
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setReplyTo(null);
+                              setReplyText('');
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                          <Button 
+                            size="sm"
+                            onClick={() => handleSubmitReply(comment.id)} 
+                            disabled={!replyText.trim() || isSubmitting}
+                          >
+                            {isSubmitting ? 'Posting...' : 'Post Reply'}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                   )}
                   
                   {/* Replies */}
                   {comment.replies && comment.replies.length > 0 && (
-                    <div className="mt-4 pl-4 border-l space-y-4">
+                    <div className="mt-4 pl-4 border-l-2 border-gray-200 dark:border-gray-700 space-y-4">
                       {comment.replies.map((reply) => (
                         <div key={reply.id} className="flex gap-3">
                           <Avatar className="h-8 w-8">
                             <AvatarImage src={reply.user.image || ''} alt={reply.user.name} />
                             <AvatarFallback>{getInitials(reply.user.name)}</AvatarFallback>
                           </Avatar>
-                          <div>
+                          <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
                               <h4 className="font-medium text-sm">{reply.user.name}</h4>
                               <span className="text-xs text-gray-500">
@@ -150,7 +233,7 @@ export function ArticleComments({
                   
                   {/* View more replies */}
                   {comment._count && comment._count.replies > (comment.replies?.length || 0) && (
-                    <button className="text-sm text-blue-600 mt-2">
+                    <button className="text-sm text-blue-600 hover:text-blue-800 mt-2 transition-colors">
                       View {comment._count.replies - (comment.replies?.length || 0)} more {comment._count.replies - (comment.replies?.length || 0) === 1 ? 'reply' : 'replies'}
                     </button>
                   )}
@@ -161,14 +244,13 @@ export function ArticleComments({
           
           {/* Pagination */}
           {pagination && pagination.pages > 1 && (
-            <Pagination
-              currentPage={pagination.page}
-              totalPages={pagination.pages}
-              onPageChange={(page) => {
-                // This would typically update query params to fetch the correct page
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-            />
+            <div className="mt-8">
+              <Pagination
+                currentPage={pagination.page}
+                totalPages={pagination.pages}
+                onPageChange={handlePageChange}
+              />
+            </div>
           )}
         </div>
       ) : (
