@@ -9,7 +9,7 @@ import { useAuthStore } from '@/store/auth-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Pagination } from '@/components/ui/pagination';
+import { CustomPagination } from '@/components/ui/custom-pagination';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { 
   AlertDialog,
@@ -65,7 +65,7 @@ export default function AdminArticlesPage() {
       await toggleTrendingArticle(id, isTrending);
       toast.success(isTrending ? 'Article marked as trending' : 'Article removed from trending');
       refetch();
-    } catch (error) {
+    } catch {
       toast.error('Failed to update trending status');
     }
   };
@@ -76,7 +76,7 @@ export default function AdminArticlesPage() {
       await toggleBreakingNews(id, isBreaking);
       toast.success(isBreaking ? 'Article marked as breaking news' : 'Article removed from breaking news');
       refetch();
-    } catch (error) {
+    } catch {
       toast.error('Failed to update breaking news status');
     }
   };
@@ -90,7 +90,7 @@ export default function AdminArticlesPage() {
       toast.success('Article deleted successfully');
       refetch();
       setArticleToDelete(null);
-    } catch (error) {
+    } catch {
       toast.error('Failed to delete article');
     }
   };
@@ -184,7 +184,7 @@ export default function AdminArticlesPage() {
                   
                   {articlesData.pagination.pages > 1 && (
                     <div className="flex justify-center mt-6">
-                      <Pagination
+                      <CustomPagination
                         currentPage={page}
                         totalPages={articlesData.pagination.pages}
                         onPageChange={handlePageChange}

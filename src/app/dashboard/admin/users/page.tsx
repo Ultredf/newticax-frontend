@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Pagination } from '@/components/ui/pagination';
+import { CustomPagination } from '@/components/ui/custom-pagination';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { 
   AlertDialog,
@@ -52,7 +52,7 @@ export default function AdminUsersPage() {
       await updateUserRole(userId, role);
       toast.success(`User role updated to ${role}`);
       refetch();
-    } catch (error) {
+    } catch {
       toast.error('Failed to update user role');
     }
   };
@@ -66,7 +66,7 @@ export default function AdminUsersPage() {
       toast.success('User deleted successfully');
       refetch();
       setUserToDelete(null);
-    } catch (error) {
+    } catch {
       toast.error('Failed to delete user');
     }
   };
@@ -128,7 +128,7 @@ export default function AdminUsersPage() {
                   
                   {usersData.pagination.pages > 1 && (
                     <div className="flex justify-center mt-6">
-                      <Pagination
+                      <CustomPagination
                         currentPage={page}
                         totalPages={usersData.pagination.pages}
                         onPageChange={handlePageChange}

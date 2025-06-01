@@ -8,7 +8,7 @@ import { getCategories } from '@/services/category-service';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ArticleCard } from '@/components/article/article-card';
-import { Pagination } from '@/components/ui/pagination';
+import { CustomPagination } from '@/components/ui/custom-pagination';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -184,7 +184,7 @@ export default function LatestPage() {
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Showing {articlesData.data.length} of {articlesData.pagination.total} articles
                 {selectedCategory !== 'all' && (
-                  <span> in "{categoriesData?.data.find(c => c.slug === selectedCategory)?.name}"</span>
+                  <span> in &quot;{categoriesData?.data.find(c => c.slug === selectedCategory)?.name}&quot;</span>
                 )}
               </p>
             </div>
@@ -196,7 +196,7 @@ export default function LatestPage() {
             </div>
             
             {articlesData.pagination && articlesData.pagination.pages > 1 && (
-              <Pagination
+              <CustomPagination
                 currentPage={page}
                 totalPages={articlesData.pagination.pages}
                 onPageChange={handlePageChange}
@@ -208,7 +208,7 @@ export default function LatestPage() {
             <h3 className="text-xl font-medium mb-2">No articles found</h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
               {selectedCategory !== 'all' 
-                ? `No articles found in "${categoriesData?.data.find(c => c.slug === selectedCategory)?.name}" category.`
+                ? `No articles found in &quot;${categoriesData?.data.find(c => c.slug === selectedCategory)?.name}&quot; category.`
                 : 'No articles are available at the moment.'
               }
             </p>

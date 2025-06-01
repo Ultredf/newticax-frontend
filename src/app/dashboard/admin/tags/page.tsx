@@ -1,4 +1,3 @@
-// src/app/dashboard/admin/tags/page.tsx (new file)
 'use client';
 
 import { useState } from 'react';
@@ -19,6 +18,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { CustomPagination } from '@/components/ui/custom-pagination';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -42,7 +42,6 @@ import {
 } from '@/components/ui/dialog';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { Tag } from '@/types';
-import { Pagination } from '@/components/ui/pagination';
 
 const tagSchema = z.object({
   name: z.string().min(2, 'Tag name must be at least 2 characters'),
@@ -273,7 +272,7 @@ export default function AdminTagsPage() {
               
               {tagsData.pagination.pages > 1 && (
                 <div className="flex justify-center mt-6">
-                  <Pagination
+                  <CustomPagination
                     currentPage={page}
                     totalPages={tagsData.pagination.pages}
                     onPageChange={handlePageChange}

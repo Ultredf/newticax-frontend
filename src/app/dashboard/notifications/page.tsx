@@ -1,4 +1,3 @@
-// src/app/dashboard/notifications/page.tsx (new file)
 'use client';
 
 import { useState } from 'react';
@@ -7,7 +6,7 @@ import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead } 
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Pagination } from '@/components/ui/pagination';
+import { CustomPagination } from '@/components/ui/custom-pagination';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { formatDistanceToNow } from 'date-fns';
 import { useRouter } from 'next/navigation';
@@ -105,7 +104,7 @@ export default function NotificationsPage() {
           ) : notifications?.data.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-500 dark:text-gray-400">
-                You don't have any notifications yet.
+                You don&apos;t have any notifications yet.
               </p>
             </div>
           ) : (
@@ -135,7 +134,7 @@ export default function NotificationsPage() {
               
               {notifications?.pagination && notifications.pagination.pages > 1 && (
                 <div className="mt-6">
-                  <Pagination
+                  <CustomPagination
                     currentPage={page}
                     totalPages={notifications.pagination.pages}
                     onPageChange={handlePageChange}

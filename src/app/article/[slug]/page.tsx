@@ -42,17 +42,23 @@ export default function ArticlePage() {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  // Fetch comments
+  // Fix useQuery for comments dengan proper typing
   const { 
     data: comments, 
     isLoading: isCommentsLoading,
     refetch: refetchComments
   } = useQuery({
     queryKey: ['comments', article?.id],
-    queryFn: () => article?.id ? getComments(article.id) : Promise.resolve({ 
-      data: [], 
-      pagination: { page: 1, limit: 10, total: 0, pages: 0 } 
-    }),
+    queryFn: async () => {
+      if (!article?.id) {
+        return { 
+          data: [], 
+          pagination: { page: 1, limit: 10, total: 0, pages: 0 },
+          success: true
+        };
+      }
+      return getComments(article.id);
+    },
     enabled: !!article?.id,
   });
 
@@ -158,7 +164,7 @@ export default function ArticlePage() {
         <Header />
         <div className="flex-1 container mx-auto px-4 py-12 text-center">
           <h1 className="text-2xl font-bold mb-4">Article Not Found</h1>
-          <p>The article you're looking for doesn't exist or has been removed.</p>
+          <p>The article you&apos;re looking for doesn&apos;t exist or has been removed.</p>
         </div>
         <Footer />
       </div>
@@ -189,10 +195,10 @@ export default function ArticlePage() {
             commentCount={article._count?.comments || 0}
           />
           
-          {/* Article Actions */}
+          {/* Article Actions - Fix boolean undefined issue */}
           <ArticleActions
-            isLiked={article.isLiked}
-            isBookmarked={article.isBookmarked}
+            isLiked={article.isLiked || false}
+            isBookmarked={article.isBookmarked || false}
             onLike={handleLike}
             onBookmark={handleBookmark}
             onShare={handleShare}
@@ -230,8 +236,8 @@ export default function ArticlePage() {
           />
         </article>
         
-        {/* Related Articles */}
-        {article.relatedArticles && article.relatedArticles.length > 0 && (
+        {/* Related Articles - Check if property exists */}
+        {article.relatedArticles && Array.isArray(article.relatedArticles) && article.relatedArticles.length > 0 && (
           <RelatedArticles
             articles={article.relatedArticles}
           />

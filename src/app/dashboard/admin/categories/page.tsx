@@ -7,7 +7,6 @@ import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Pagination } from '@/components/ui/pagination';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -44,6 +43,14 @@ import {
 } from '@/components/ui/dialog';
 import { Plus, Edit, Trash2, Search } from 'lucide-react';
 import { Category } from '@/types';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 
 const categorySchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -332,13 +339,71 @@ export default function AdminCategoriesPage() {
                 ))}
               </div>
               
+              {/* Fix Pagination */}
               {categoriesData.pagination.pages > 1 && (
                 <div className="flex justify-center mt-6">
-                  <Pagination
-                    currentPage={page}
-                    totalPages={categoriesData.pagination.pages}
-                    onPageChange={handlePageChange}
-                  />
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious 
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (page > 1) handlePageChange(page - 1);
+                          }}
+                          className={page <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                        />
+                      </PaginationItem>
+                      
+                      {Array.from({ length: categoriesData.pagination.pages }, (_, i) => i + 1)
+                        .filter(pageNum => {
+                          // Show first page, last page, current page, and pages around current
+                          return pageNum === 1 || 
+                                 pageNum === categoriesData.pagination.pages || 
+                                 Math.abs(pageNum - page) <= 1;
+                        })
+                        .map((pageNum, index, arr) => {
+                          // Add ellipsis if there's a gap
+                          const items = [];
+                          if (index > 0 && arr[index - 1] < pageNum - 1) {
+                            items.push(
+                              <PaginationItem key={`ellipsis-${pageNum}`}>
+                                <span className="px-3 py-2">...</span>
+                              </PaginationItem>
+                            );
+                          }
+                          
+                          items.push(
+                            <PaginationItem key={pageNum}>
+                              <PaginationLink
+                                href="#"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  handlePageChange(pageNum);
+                                }}
+                                isActive={pageNum === page}
+                                className="cursor-pointer"
+                              >
+                                {pageNum}
+                              </PaginationLink>
+                            </PaginationItem>
+                          );
+                          
+                          return items;
+                        })}
+                      
+                      <PaginationItem>
+                        <PaginationNext 
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (page < categoriesData.pagination.pages) handlePageChange(page + 1);
+                          }}
+                          className={page >= categoriesData.pagination.pages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
                 </div>
               )}
             </div>

@@ -7,9 +7,8 @@ import { getTrendingArticles, getArticles } from '@/services/article-service';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ArticleCard } from '@/components/article/article-card';
-import { Pagination } from '@/components/ui/pagination';
+import { CustomPagination } from '@/components/ui/custom-pagination';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TrendingUp, Clock, Eye } from 'lucide-react';
 
@@ -64,8 +63,6 @@ export default function TrendingPage() {
     setPage(newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
-  const isLoading = isTrendingLoading || isPopularLoading || isRecentLoading;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -136,7 +133,7 @@ export default function TrendingPage() {
                 </div>
                 
                 {popularArticles.pagination && popularArticles.pagination.pages > 1 && (
-                  <Pagination
+                  <CustomPagination
                     currentPage={page}
                     totalPages={popularArticles.pagination.pages}
                     onPageChange={handlePageChange}
@@ -168,7 +165,7 @@ export default function TrendingPage() {
                 </div>
                 
                 {recentArticles.pagination && recentArticles.pagination.pages > 1 && (
-                  <Pagination
+                  <CustomPagination
                     currentPage={page}
                     totalPages={recentArticles.pagination.pages}
                     onPageChange={handlePageChange}

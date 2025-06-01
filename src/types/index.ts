@@ -72,6 +72,7 @@ export interface Article {
   };
   isBookmarked?: boolean;
   isLiked?: boolean;
+  relatedArticles?: Article[]; // Add this line
 }
 
 export interface ArticleInput {

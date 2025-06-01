@@ -1,4 +1,3 @@
-// src/app/dashboard/reading-history/page.tsx (new file)
 'use client';
 
 import { useState } from 'react';
@@ -6,10 +5,11 @@ import { useQuery } from '@tanstack/react-query';
 import { getReadingHistory } from '@/services/article-service';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Pagination } from '@/components/ui/pagination';
+import { CustomPagination } from '@/components/ui/custom-pagination';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ArticleList } from '@/components/dashboard/article-list';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function ReadingHistoryPage() {
   const [page, setPage] = useState(1);
@@ -23,8 +23,7 @@ export default function ReadingHistoryPage() {
   // Fetch reading history
   const { 
     data: historyData, 
-    isLoading,
-    refetch 
+    isLoading
   } = useQuery({
     queryKey: ['readingHistory', page],
     queryFn: () => getReadingHistory({ page, limit: 10 }),
@@ -57,13 +56,13 @@ export default function ReadingHistoryPage() {
             <div className="space-y-4">
               <ArticleList 
                 articles={historyData.data} 
-                emptyMessage="You haven't read any articles yet."
+                emptyMessage="You haven&apos;t read any articles yet."
                 showReadAt
               />
               
               {historyData.pagination.pages > 1 && (
                 <div className="mt-6">
-                  <Pagination
+                  <CustomPagination
                     currentPage={page}
                     totalPages={historyData.pagination.pages}
                     onPageChange={handlePageChange}
@@ -74,10 +73,10 @@ export default function ReadingHistoryPage() {
           ) : (
             <div className="text-center py-8">
               <p className="text-gray-500 dark:text-gray-400 mb-4">
-                You haven't read any articles yet.
+                You haven&apos;t read any articles yet.
               </p>
               <Button variant="outline" asChild>
-                <a href="/">Browse Articles</a>
+                <Link href="/">Browse Articles</Link>
               </Button>
             </div>
           )}

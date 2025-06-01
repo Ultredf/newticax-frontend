@@ -5,11 +5,12 @@ import { useQuery } from '@tanstack/react-query';
 import { getBookmarks, removeBookmark } from '@/services/article-service';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Pagination } from '@/components/ui/pagination';
+import { CustomPagination } from '@/components/ui/custom-pagination';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { BookmarkArticleCard } from '@/components/dashboard/bookmark-article-card';
+import Link from 'next/link';
 
 export default function BookmarksPage() {
   const [page, setPage] = useState(1);
@@ -33,7 +34,7 @@ export default function BookmarksPage() {
       await removeBookmark(articleId);
       toast.success('Bookmark removed');
       refetch();
-    } catch (error) {
+    } catch {
       toast.error('Failed to remove bookmark');
     }
   };
@@ -77,7 +78,7 @@ export default function BookmarksPage() {
               
               {bookmarks.pagination.pages > 1 && (
                 <div className="mt-6">
-                  <Pagination
+                  <CustomPagination
                     currentPage={page}
                     totalPages={bookmarks.pagination.pages}
                     onPageChange={handlePageChange}
@@ -88,10 +89,10 @@ export default function BookmarksPage() {
           ) : (
             <div className="text-center py-8">
               <p className="text-gray-500 dark:text-gray-400 mb-4">
-                You haven't bookmarked any articles yet.
+                You haven&apos;t bookmarked any articles yet.
               </p>
               <Button variant="outline" asChild>
-                <a href="/">Browse Articles</a>
+                <Link href="/">Browse Articles</Link>
               </Button>
             </div>
           )}
