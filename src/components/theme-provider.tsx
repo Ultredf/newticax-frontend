@@ -1,95 +1,41 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState } from "react"
+import * as React from "react"
+import { ThemeProvider as NextThemesProvider } from "next-themes"
 
-type Theme = "dark" | "light" | "system"
+type Attribute = 'class' | `data-${string}`
 
-type ThemeProviderProps = {
+interface ThemeProviderProps {
   children: React.ReactNode
-  defaultTheme?: Theme
-  storageKey?: string
+  attribute?: Attribute | Attribute[]
+  defaultTheme?: string
   enableSystem?: boolean
-  attribute?: string
+  disableTransitionOnChange?: boolean
+  themes?: string[]
+  forcedTheme?: string
+  storageKey?: string
+  nonce?: string
 }
 
-type ThemeProviderState = {
-  theme: Theme
-  setTheme: (theme: Theme) => void
-}
-
-const initialState: ThemeProviderState = {
-  theme: "system",
-  setTheme: () => null,
-}
-
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
-
-export function ThemeProvider({
-  children,
+export function ThemeProvider({ 
+  children, 
+  attribute = "class" as const,
   defaultTheme = "system",
-  storageKey = "ui-theme",
   enableSystem = true,
-  attribute = "class",
-  ...props
+  disableTransitionOnChange = true,
+  ...props 
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    // Hanya akses localStorage di client-side
-    if (typeof window !== 'undefined') {
-      return (localStorage.getItem(storageKey) as Theme) || defaultTheme
-    }
-    return defaultTheme
-  })
-
-  useEffect(() => {
-    const root = window.document.documentElement
-    
-    // Remove previous classes
-    root.classList.remove("light", "dark")
-
-    if (theme === "system" && enableSystem) {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light"
-      
-      if (attribute === "class") {
-        root.classList.add(systemTheme)
-      } else {
-        root.setAttribute(attribute, systemTheme)
-      }
-      return
-    }
-
-    if (attribute === "class") {
-      root.classList.add(theme)
-    } else {
-      root.setAttribute(attribute, theme)
-    }
-  }, [theme, enableSystem, attribute])
-
-  const value = {
-    theme,
-    setTheme: (theme: Theme) => {
-      // Hanya akses localStorage di client-side
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(storageKey, theme)
-      }
-      setTheme(theme)
-    },
-  }
-
   return (
-    <ThemeProviderContext.Provider {...props} value={value}>
+    <NextThemesProvider 
+      attribute={attribute}
+      defaultTheme={defaultTheme}
+      enableSystem={enableSystem}
+      disableTransitionOnChange={disableTransitionOnChange}
+      {...props}
+    >
       {children}
-    </ThemeProviderContext.Provider>
+    </NextThemesProvider>
   )
 }
 
-export const useTheme = () => {
-  const context = useContext(ThemeProviderContext)
-
-  if (context === undefined)
-    throw new Error("useTheme must be used within a ThemeProvider")
-
-  return context
-}
+export { useTheme } from "next-themes"
