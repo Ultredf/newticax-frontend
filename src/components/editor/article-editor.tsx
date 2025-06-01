@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, FieldValues } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import dynamic from 'next/dynamic';
@@ -27,9 +27,21 @@ import {
 } from '@/components/ui/select';
 import { Article } from '@/types';
 
-// Dynamically import React Quill to avoid SSR issues
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
-import 'react-quill/dist/quill.snow.css';
+// Dynamically import MD Editor to avoid SSR issues
+const MDEditor = dynamic(() => import('@uiw/react-md-editor'), { ssr: false });
+
+// Define explicit types for the form
+interface ArticleFormValues {
+  title: string;
+  summary: string;
+  content: string;
+  image?: string;
+  categoryId?: string;
+  isBreaking: boolean;
+  isTrending: boolean;
+  published: boolean;
+  language: 'ENGLISH' | 'INDONESIAN';
+}
 
 const articleSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters long'),
@@ -37,13 +49,11 @@ const articleSchema = z.object({
   content: z.string().min(100, 'Content must be at least 100 characters long'),
   image: z.string().url('Please enter a valid image URL').optional().or(z.literal('')),
   categoryId: z.string().optional(),
-  isBreaking: z.boolean().default(false),
-  isTrending: z.boolean().default(false),
-  published: z.boolean().default(true),
+  isBreaking: z.boolean(),
+  isTrending: z.boolean(),
+  published: z.boolean(),
   language: z.enum(['ENGLISH', 'INDONESIAN']),
-});
-
-type ArticleFormValues = z.infer<typeof articleSchema>;
+}) satisfies z.ZodType<ArticleFormValues>;
 
 interface ArticleEditorProps {
   article?: Article;
@@ -73,7 +83,7 @@ export function ArticleEditor({ article, isEdit = false }: ArticleEditorProps) {
       isBreaking: article?.isBreaking || false,
       isTrending: article?.isTrending || false,
       published: article?.published !== undefined ? article.published : true,
-      language: article?.language || language,
+      language: article?.language || language || 'ENGLISH',
     }
   });
 
@@ -86,9 +96,9 @@ export function ArticleEditor({ article, isEdit = false }: ArticleEditorProps) {
         content: article.content,
         image: article.image || '',
         categoryId: article.categoryId || '',
-        isBreaking: article.isBreaking,
-        isTrending: article.isTrending,
-        published: article.published,
+        isBreaking: article.isBreaking || false,
+        isTrending: article.isTrending || false,
+        published: article.published !== undefined ? article.published : true,
         language: article.language,
       });
       setEditorContent(article.content);
@@ -116,20 +126,6 @@ export function ArticleEditor({ article, isEdit = false }: ArticleEditorProps) {
     } catch (error) {
       toast.error(isEdit ? 'Failed to update article' : 'Failed to create article');
     }
-  };
-
-  // React Quill toolbar options
-  const modules = {
-    toolbar: [
-      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      [{ 'indent': '-1'}, { 'indent': '+1' }],
-      [{ 'align': [] }],
-      ['link', 'image'],
-      ['clean'],
-      [{ 'color': [] }, { 'background': [] }],
-    ],
   };
 
   const isLoading = isCategoriesLoading;
@@ -204,8 +200,7 @@ export function ArticleEditor({ article, isEdit = false }: ArticleEditorProps) {
                     <FormLabel>Category</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
-                      defaultValue={field.value || undefined}
-                      value={field.value || undefined}
+                      value={field.value || ''}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -234,14 +229,18 @@ export function ArticleEditor({ article, isEdit = false }: ArticleEditorProps) {
                 <FormItem>
                   <FormLabel>Content</FormLabel>
                   <FormControl>
-                    <div className="min-h-[400px]">
+                    <div className="min-h-[400px]" data-color-mode="light">
                       {typeof window !== 'undefined' && (
-                        <ReactQuill
-                          theme="snow"
+                        <MDEditor
                           value={editorContent}
-                          onChange={setEditorContent}
-                          modules={modules}
-                          className="h-[350px] mb-12"
+                          onChange={(value) => setEditorContent(value || '')}
+                          preview="edit"
+                          height={400}
+                          visibleDragbar={false}
+                          textareaProps={{
+                            placeholder: 'Write your article content here using Markdown...',
+                            style: { fontSize: 14, lineHeight: 1.5 }
+                          }}
                         />
                       )}
                     </div>
@@ -260,7 +259,7 @@ export function ArticleEditor({ article, isEdit = false }: ArticleEditorProps) {
                     <FormLabel>Language</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
-                      defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>

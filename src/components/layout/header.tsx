@@ -33,12 +33,18 @@ export function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
+  const [mounted, setMounted] = useState(false);
   
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const { user, isAuthenticated, logout } = useAuthStore();
   const { t } = useTranslations();
+
+  // Handle mounting for hydration
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Handle search submit
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -139,17 +145,19 @@ export function Header() {
             <LanguageSelector />
 
             {/* Theme Toggle */}
-            <Button 
-              size="icon" 
-              variant="ghost" 
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            >
-              {theme === 'dark' ? (
-                <Sun className="h-5 w-5" />
-              ) : (
-                <Moon className="h-5 w-5" />
-              )}
-            </Button>
+            {mounted && (
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              >
+                {theme === 'dark' ? (
+                  <Sun className="h-5 w-5" />
+                ) : (
+                  <Moon className="h-5 w-5" />
+                )}
+              </Button>
+            )}
 
             {/* User Menu */}
             {isAuthenticated ? (

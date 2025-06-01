@@ -152,6 +152,7 @@ export interface PaginatedResponse<T> {
     total: number;
     pages: number;
   };
+  source?: 'internal' | 'external'; // Tambahkan property source
 }
 
 // Dashboard types for admin

@@ -1,6 +1,6 @@
 import { Article } from '@/types';
 import { ArticleCard } from '@/components/article/article-card';
-import { Pagination } from '@/components/ui/pagination';
+import { CustomPagination } from '@/components/ui/custom-pagination';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
@@ -13,9 +13,10 @@ interface LatestSectionProps {
     total: number;
     pages: number;
   };
+  onPageChange?: (page: number) => void;
 }
 
-export function LatestSection({ title, articles, pagination }: LatestSectionProps) {
+export function LatestSection({ title, articles, pagination, onPageChange }: LatestSectionProps) {
   if (!articles || articles.length === 0) {
     return (
       <div>
@@ -26,6 +27,15 @@ export function LatestSection({ title, articles, pagination }: LatestSectionProp
       </div>
     );
   }
+
+  const handlePageChange = (page: number) => {
+    if (onPageChange) {
+      onPageChange(page);
+    } else {
+      // Default behavior - scroll to top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   return (
     <div>
@@ -44,13 +54,10 @@ export function LatestSection({ title, articles, pagination }: LatestSectionProp
 
       {pagination && pagination.pages > 1 && (
         <div className="mt-6 flex justify-center">
-          <Pagination
+          <CustomPagination
             currentPage={pagination.page}
             totalPages={pagination.pages}
-            onPageChange={(page) => {
-              // Handle page change - this would typically update query params
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
+            onPageChange={handlePageChange}
           />
         </div>
       )}

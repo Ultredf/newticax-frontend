@@ -10,7 +10,7 @@ import { Footer } from '@/components/layout/footer';
 import { ArticleCard } from '@/components/article/article-card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Pagination } from '@/components/ui/pagination';
+import { CustomPagination } from '@/components/ui/custom-pagination';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Search as SearchIcon } from 'lucide-react';
 
@@ -97,6 +97,7 @@ function SearchContent() {
                   </h2>
                 </div>
                 
+                {/* Check if source exists before accessing it */}
                 {searchResults?.source === 'external' && (
                   <div className="mb-6 bg-blue-50 dark:bg-blue-900/30 p-4 rounded-lg">
                     <p className="text-sm text-blue-700 dark:text-blue-400">
@@ -120,7 +121,7 @@ function SearchContent() {
                     </div>
                     
                     {searchResults?.pagination && searchResults.pagination.pages > 1 && (
-                      <Pagination
+                      <CustomPagination
                         currentPage={currentPage}
                         totalPages={searchResults.pagination.pages}
                         onPageChange={handlePageChange}

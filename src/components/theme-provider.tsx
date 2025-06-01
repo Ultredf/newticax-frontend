@@ -9,6 +9,7 @@ type ThemeProviderProps = {
   defaultTheme?: Theme
   storageKey?: string
   enableSystem?: boolean
+  attribute?: string
 }
 
 type ThemeProviderState = {
@@ -28,6 +29,7 @@ export function ThemeProvider({
   defaultTheme = "system",
   storageKey = "ui-theme",
   enableSystem = true,
+  attribute = "class",
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(() => {
@@ -50,12 +52,20 @@ export function ThemeProvider({
         ? "dark"
         : "light"
       
-      root.classList.add(systemTheme)
+      if (attribute === "class") {
+        root.classList.add(systemTheme)
+      } else {
+        root.setAttribute(attribute, systemTheme)
+      }
       return
     }
 
-    root.classList.add(theme)
-  }, [theme, enableSystem])
+    if (attribute === "class") {
+      root.classList.add(theme)
+    } else {
+      root.setAttribute(attribute, theme)
+    }
+  }, [theme, enableSystem, attribute])
 
   const value = {
     theme,
