@@ -36,7 +36,7 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             user: userData,
             isAuthenticated: true,
-            language: userData.language || 'ENGLISH', // Update language from user data
+            language: userData.language || 'ENGLISH',
           });
         } catch (error) {
           set({
@@ -110,11 +110,9 @@ export const useAuthStore = create<AuthState>()(
         set({ language });
         
         try {
-          // If user is authenticated, update language preference on server
           if (currentState.isAuthenticated) {
             await api.put('/auth/preferences', { language });
             
-            // Update user object with new language
             if (currentState.user) {
               set({
                 user: {
@@ -126,7 +124,6 @@ export const useAuthStore = create<AuthState>()(
           }
         } catch (error) {
           console.error('Failed to update language preference:', error);
-          // Revert language on error if user was authenticated
           if (currentState.isAuthenticated) {
             set({ language: currentState.language });
           }
@@ -143,6 +140,8 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
         language: state.language,
       }),
+      // Tambahkan check untuk browser
+      skipHydration: typeof window === 'undefined',
     }
   )
 );

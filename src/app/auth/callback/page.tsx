@@ -7,8 +7,9 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle } from 'lucide-react';
+import dynamic from 'next/dynamic';
 
-export default function AuthCallbackPage() {
+function AuthCallbackPageComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { getMe } = useAuthStore();
@@ -20,22 +21,18 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     const handleCallback = async () => {
       if (success === 'true') {
-        // Authentication successful, fetch user data
         try {
           await getMe();
-          // Redirect to dashboard after successful authentication
           setTimeout(() => {
             router.push('/dashboard');
           }, 2000);
         } catch (error) {
           console.error('Failed to fetch user data:', error);
-          // Redirect to login on error
           setTimeout(() => {
             router.push('/login?error=callback_failed');
           }, 3000);
         }
       } else if (error) {
-        // Authentication failed, redirect to login with error
         setTimeout(() => {
           router.push(`/login?error=${encodeURIComponent(error)}`);
         }, 3000);
@@ -144,3 +141,10 @@ export default function AuthCallbackPage() {
     </div>
   );
 }
+
+// Export component dengan dynamic import untuk disable SSR
+const AuthCallbackPage = dynamic(() => Promise.resolve(AuthCallbackPageComponent), {
+  ssr: false
+});
+
+export default AuthCallbackPage;
