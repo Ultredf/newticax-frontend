@@ -35,8 +35,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
+// Schema yang sesuai dengan Prisma schema
 const registerSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
+  username: z.string()
+    .min(3, { message: 'Username must be at least 3 characters' })
+    .regex(/^[a-zA-Z0-9_]+$/, { message: 'Username can only contain letters, numbers, and underscores' })
+    .optional()
+    .or(z.literal('')), // Username is optional in Prisma
   email: z.string().email({ message: 'Please enter a valid email' }),
   password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
   language: z.enum(['ENGLISH', 'INDONESIAN']).default('ENGLISH'),
@@ -57,6 +63,7 @@ export default function RegisterPage() {
     resolver: zodResolver(registerSchema),
     defaultValues: {
       name: '',
+      username: '',
       email: '',
       password: '',
       language: 'ENGLISH',
@@ -70,10 +77,17 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: RegisterFormValues) => {
     try {
-      await register(data);
+      // Prepare data for submission - remove empty username if not provided
+      const submitData = {
+        ...data,
+        username: data.username?.trim() || undefined, // Convert empty string to undefined
+      };
+      
+      await register(submitData);
       toast.success('Registration successful');
     } catch (err) {
       // Error is handled by the auth store and displayed below
+      console.error('Registration failed:', err);
     }
   };
 
@@ -92,6 +106,12 @@ export default function RegisterPage() {
         <CardDescription className="text-center">Enter your details to sign up</CardDescription>
       </CardHeader>
       <CardContent>
+        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+          <p className="text-sm text-red-600 dark:text-red-400">
+            <strong>Required fields:</strong> Name, email, and password are required. Username is optional.
+          </p>
+        </div>
+
         {error && (
           <Alert variant="destructive" className="mb-4">
             <AlertDescription>{error}</AlertDescription>
@@ -105,9 +125,27 @@ export default function RegisterPage() {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full Name</FormLabel>
+                  <FormLabel>Full Name *</FormLabel>
                   <FormControl>
-                    <Input placeholder="John Doe" {...field} />
+                    <Input 
+                      placeholder="Andries Al" 
+                      {...field} 
+                      className="bg-blue-50 dark:bg-blue-900/20"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="username"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Username (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="andries_al" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -119,9 +157,9 @@ export default function RegisterPage() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Email *</FormLabel>
                   <FormControl>
-                    <Input placeholder="john@example.com" type="email" {...field} />
+                    <Input placeholder="andriesnrai@gmail.com" type="email" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -133,9 +171,9 @@ export default function RegisterPage() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel>Password *</FormLabel>
                   <FormControl>
-                    <Input placeholder="••••••••" type="password" {...field} />
+                    <Input placeholder="••••••••••••" type="password" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

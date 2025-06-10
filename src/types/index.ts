@@ -1,7 +1,8 @@
-// User types
+// User types - sesuai dengan Prisma schema
 export interface User {
   id: string;
   name: string;
+  username?: string | null; // Optional dan bisa null sesuai Prisma
   email: string;
   image?: string | null;
   bio?: string | null;
@@ -21,9 +22,10 @@ export interface UserPreference {
   emailUpdates: boolean;
 }
 
-// Auth types
+// Auth types - sesuai dengan Prisma schema
 export interface RegisterInput {
   name: string;
+  username?: string; // Optional sesuai Prisma
   email: string;
   password: string;
   language?: 'ENGLISH' | 'INDONESIAN';
@@ -40,7 +42,7 @@ export interface AuthResponse {
   data?: User;
 }
 
-// Article types
+// Article types - sesuai dengan Prisma schema
 export interface Article {
   id: string;
   title: string;
@@ -50,6 +52,7 @@ export interface Article {
   image?: string | null;
   source?: string | null;
   sourceUrl?: string | null;
+  externalId?: string | null;
   isExternal: boolean;
   isBreaking: boolean;
   isTrending: boolean;
@@ -72,7 +75,7 @@ export interface Article {
   };
   isBookmarked?: boolean;
   isLiked?: boolean;
-  relatedArticles?: Article[]; // Add this line
+  relatedArticles?: Article[];
 }
 
 export interface ArticleInput {
@@ -91,10 +94,11 @@ export interface ArticleInput {
 export interface Author {
   id: string;
   name: string;
+  username?: string | null;
   image?: string | null;
 }
 
-// Category types
+// Category types - sesuai dengan Prisma schema
 export interface Category {
   id: string;
   name: string;
@@ -106,7 +110,7 @@ export interface Category {
   };
 }
 
-// Tag types
+// Tag types - sesuai dengan Prisma schema
 export interface Tag {
   id: string;
   name: string;
@@ -116,7 +120,7 @@ export interface Tag {
   };
 }
 
-// Comment types
+// Comment types - sesuai dengan Prisma schema
 export interface Comment {
   id: string;
   content: string;
@@ -152,7 +156,7 @@ export interface PaginatedResponse<T> {
     total: number;
     pages: number;
   };
-  source?: 'internal' | 'external'; // Tambahkan property source
+  source?: 'internal' | 'external';
 }
 
 // Dashboard types for admin
@@ -174,7 +178,7 @@ export interface DashboardStats {
   };
 }
 
-// Notification type
+// Notification type - sesuai dengan Prisma schema
 export interface Notification {
   id: string;
   type: string;
@@ -185,7 +189,7 @@ export interface Notification {
   createdAt: string;
 }
 
-// News API cache type (for admin/developer reference)
+// News API cache type - sesuai dengan Prisma schema
 export interface NewsApiCache {
   id: string;
   endpoint: string;

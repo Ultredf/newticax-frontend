@@ -61,9 +61,13 @@ export const useAuthStore = create<AuthState>()(
           });
           return response.data;
         } catch (error: any) {
+          const errorMessage = error.response?.data?.message || 
+                             error.response?.data?.error ||
+                             'Login failed';
+          
           set({
             isLoading: false,
-            error: error.response?.data?.message || 'Login failed',
+            error: errorMessage,
           });
           throw error;
         }
@@ -72,7 +76,23 @@ export const useAuthStore = create<AuthState>()(
       register: async (data: RegisterInput) => {
         try {
           set({ isLoading: true, error: null });
-          const response = await api.post('/auth/register', data);
+          
+          // Prepare payload sesuai dengan Prisma schema
+          const payload: RegisterInput = {
+            name: data.name.trim(),
+            email: data.email.trim(),
+            password: data.password,
+            language: data.language || 'ENGLISH',
+          };
+          
+          // Only include username if it's provided and not empty
+          if (data.username && data.username.trim()) {
+            payload.username = data.username.trim();
+          }
+          
+          console.log('Sending registration data:', payload);
+          
+          const response = await api.post('/auth/register', payload);
           const userData = response.data.data;
           
           set({
@@ -83,9 +103,29 @@ export const useAuthStore = create<AuthState>()(
           });
           return response.data;
         } catch (error: any) {
+          console.error('Registration error:', error.response?.data);
+          
+          let errorMessage = 'Registration failed';
+          
+          // Handle specific error types
+          if (error.response?.data) {
+            const errorData = error.response.data;
+            
+            if (errorData.message) {
+              errorMessage = errorData.message;
+            } else if (errorData.error) {
+              errorMessage = errorData.error;
+            } else if (errorData.errors && Array.isArray(errorData.errors)) {
+              // Handle validation errors array
+              errorMessage = errorData.errors.map((err: any) => err.message || err).join(', ');
+            } else if (typeof errorData === 'string') {
+              errorMessage = errorData;
+            }
+          }
+          
           set({
             isLoading: false,
-            error: error.response?.data?.message || 'Registration failed',
+            error: errorMessage,
           });
           throw error;
         }
@@ -140,7 +180,6 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
         language: state.language,
       }),
-      // Tambahkan check untuk browser
       skipHydration: typeof window === 'undefined',
     }
   )

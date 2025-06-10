@@ -8,7 +8,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { format } from 'date-fns';
 import { addComment } from '@/services/article-service';
 import { toast } from 'sonner';
-import { Pagination } from '@/components/ui/pagination';
+import { CustomPagination } from '@/components/ui/custom-pagination'; // Ganti ini
 
 interface ArticleCommentsProps {
   articleId: string;
@@ -242,10 +242,10 @@ export function ArticleComments({
             </div>
           ))}
           
-          {/* Pagination */}
+          {/* Pagination - Gunakan CustomPagination */}
           {pagination && pagination.pages > 1 && (
             <div className="mt-8">
-              <Pagination
+              <CustomPagination
                 currentPage={pagination.page}
                 totalPages={pagination.pages}
                 onPageChange={handlePageChange}
