@@ -100,6 +100,26 @@ const API_BASE_URL = process.env.NODE_ENV === 'production'
   ? 'https://newticax-backend-production.up.railway.app/api'
   : 'http://localhost:4000/api';
 
+// Network connectivity checker
+const isBackendAvailable = async (): Promise<boolean> => {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+    
+    const response = await fetch(`${API_BASE_URL}/health`, {
+      method: 'GET',
+      signal: controller.signal,
+      cache: 'no-cache',
+    });
+    
+    clearTimeout(timeoutId);
+    return response.ok;
+  } catch (error) {
+    console.warn('🔌 Backend connectivity check failed:', error);
+    return false;
+  }
+};
+
 // Create axios instance with proper configuration
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -345,12 +365,29 @@ export const useAuthStore = create<AuthState>()(
           authCheckInProgress = true;
           authCheckPromise = (async () => {
             try {
+              // First check if backend is available
+              console.log('🔌 Checking backend connectivity...');
+              const backendAvailable = await isBackendAvailable();
+              
+              if (!backendAvailable) {
+                console.warn('⚠️ Backend server is not available, skipping auth check');
+                set({
+                  user: null,
+                  isAuthenticated: false,
+                  isLoading: false,
+                  error: null, // Don't set error for network issues
+                  isInitialized: true,
+                });
+                return;
+              }
+
               // Don't set loading if user is already authenticated
               const currentState = get();
               if (!currentState.isAuthenticated) {
                 set({ isLoading: true, error: null });
               }
 
+              console.log('📡 Making request to /auth/me...');
               const response = await api.get<ApiResponse<User>>('/auth/me');
 
               console.log('✅ Auth check response:', {
@@ -385,6 +422,22 @@ export const useAuthStore = create<AuthState>()(
             } catch (error: any) {
               console.error('❌ Auth check error:', error);
               
+              // Handle network errors gracefully
+              if (error.code === 'ERR_NETWORK' || error.message === 'Network Error' || error.name === 'AbortError') {
+                console.warn('🔌 Network connection failed - Backend server might be down');
+                console.warn('🔧 Continuing without authentication...');
+                
+                // Don't treat network errors as auth failures
+                set({
+                  user: null,
+                  isAuthenticated: false,
+                  isLoading: false,
+                  error: null, // Don't set error for network issues
+                  isInitialized: true,
+                });
+                return;
+              }
+              
               // Check if it's a 401 error (not authenticated)
               if (error.response?.status === 401) {
                 console.log('🔐 Auth check: User not authenticated (401)');
@@ -398,11 +451,12 @@ export const useAuthStore = create<AuthState>()(
                 });
               } else {
                 // For other errors, set error but don't change auth status drastically
-                const errorMessage = error.response?.data?.message || error.message || 'Auth check failed';
+                const errorMessage = error.response?.data?.message || 'Authentication service temporarily unavailable';
+                console.warn('⚠️ Auth service error:', errorMessage);
                 
                 set({
                   isLoading: false,
-                  error: errorMessage,
+                  error: null, // Don't show errors to users for service issues
                   isInitialized: true,
                 });
               }
