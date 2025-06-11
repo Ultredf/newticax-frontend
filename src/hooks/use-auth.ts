@@ -21,46 +21,64 @@ export const useAuth = (options: UseAuthOptions = {}) => {
     redirectAuthenticatedTo = '/dashboard',
   } = options;
 
-  const { isAuthenticated, user, isLoading, getMe } = useAuthStore();
+  const { isAuthenticated, user, isLoading, isInitialized, checkAuth } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
-    // Fetch user data if needed
-    if (!isAuthenticated && !isLoading) {
-      getMe();
+    // Fetch user data if needed - using checkAuth instead of getMe
+    if (!isInitialized && !isLoading) {
+      console.log('🔍 useAuth: Checking authentication status...');
+      checkAuth().catch(error => {
+        console.warn('⚠️ useAuth: Auth check failed (this is normal if backend is down):', error.message);
+        // Don't throw error, just log it - app should continue working
+      });
     }
-  }, [getMe, isAuthenticated, isLoading]);
+  }, [checkAuth, isInitialized, isLoading]);
 
   useEffect(() => {
-    // Skip redirection if still loading
-    if (isLoading) return;
+    // Skip redirection if still loading or not initialized
+    if (isLoading || !isInitialized) return;
+
+    console.log('🚦 useAuth: Checking redirect conditions:', {
+      requireAuth,
+      requireAdmin,
+      requireAuthor,
+      redirectIfAuthenticated,
+      isAuthenticated,
+      userRole: user?.role,
+    });
 
     // Redirect if authentication is required but user is not authenticated
     if (requireAuth && !isAuthenticated) {
+      console.log('🔒 useAuth: Redirecting to login - auth required');
       router.push(redirectTo);
       return;
     }
 
     // Redirect if admin role is required but user is not admin
     if (requireAdmin && (!isAuthenticated || user?.role !== 'ADMIN')) {
+      console.log('👮 useAuth: Redirecting - admin role required');
       router.push(redirectTo);
       return;
     }
 
     // Redirect if author role is required but user is not author or admin
     if (requireAuthor && (!isAuthenticated || (user?.role !== 'AUTHOR' && user?.role !== 'ADMIN'))) {
+      console.log('✍️ useAuth: Redirecting - author role required');
       router.push(redirectTo);
       return;
     }
 
     // Redirect if user is authenticated but shouldn't be (e.g., login page)
     if (redirectIfAuthenticated && isAuthenticated) {
+      console.log('🏠 useAuth: Redirecting authenticated user');
       router.push(redirectAuthenticatedTo);
       return;
     }
   }, [
     isAuthenticated,
     isLoading,
+    isInitialized,
     requireAuth,
     requireAdmin,
     requireAuthor,
@@ -74,7 +92,7 @@ export const useAuth = (options: UseAuthOptions = {}) => {
   return {
     user,
     isAuthenticated,
-    isLoading,
+    isLoading: isLoading || !isInitialized,
     isAdmin: user?.role === 'ADMIN',
     isAuthor: user?.role === 'AUTHOR' || user?.role === 'ADMIN',
   };

@@ -15,16 +15,19 @@ import { CategorySection } from '@/components/home/category-section';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export default function HomePage() {
-  const { language, getMe, isAuthenticated } = useAuthStore();
+  const { user, checkAuth, isAuthenticated, isInitialized } = useAuthStore();
   const [isPageLoaded, setIsPageLoaded] = useState(false);
   
-  // Check auth status
+  // Get user language preference or default to 'ENGLISH'
+  const language = user?.language || 'ENGLISH';
+  
+  // Check auth status when component mounts
   useEffect(() => {
-    if (!isAuthenticated) {
-      getMe();
+    if (!isInitialized) {
+      checkAuth();
     }
     setIsPageLoaded(true);
-  }, [isAuthenticated, getMe]);
+  }, [isInitialized, checkAuth]);
 
   // Fetch breaking news
   const { data: breakingNews, isLoading: isBreakingLoading } = useQuery({
