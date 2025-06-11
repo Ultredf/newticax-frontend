@@ -95,21 +95,38 @@ export interface AuthState {
   setLoading: (loading: boolean) => void;
 }
 
-// API Configuration
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://newticax-backend-production.up.railway.app/api'
-  : 'http://localhost:4000/api';
+// API Configuration - Better environment handling
+const getApiBaseUrl = () => {
+  // Check for explicit environment variable first
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  
+  // Fallback to environment-based URLs
+  return process.env.NODE_ENV === 'production' 
+    ? 'https://newticax-backend.up.railway.app/api'
+    : 'http://localhost:4000/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
+console.log('🔧 API Configuration:', {
+  NODE_ENV: process.env.NODE_ENV,
+  API_BASE_URL,
+  NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+});
 
 // Network connectivity checker
 const isBackendAvailable = async (): Promise<boolean> => {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
     
     const response = await fetch(`${API_BASE_URL}/health`, {
       method: 'GET',
       signal: controller.signal,
       cache: 'no-cache',
+      mode: 'cors',
     });
     
     clearTimeout(timeoutId);
@@ -264,7 +281,15 @@ export const useAuthStore = create<AuthState>()(
           } catch (error: any) {
             console.error('❌ Login error:', error);
             
-            const errorMessage = error.response?.data?.message || error.message || 'Login failed';
+            let errorMessage = 'Login failed';
+            
+            if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+              errorMessage = 'Unable to connect to server. Please check your internet connection.';
+            } else if (error.response?.data?.message) {
+              errorMessage = error.response.data.message;
+            } else if (error.message) {
+              errorMessage = error.message;
+            }
             
             set({
               user: null,
@@ -319,7 +344,15 @@ export const useAuthStore = create<AuthState>()(
           } catch (error: any) {
             console.error('❌ Registration error:', error);
             
-            const errorMessage = error.response?.data?.message || error.message || 'Registration failed';
+            let errorMessage = 'Registration failed';
+            
+            if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+              errorMessage = 'Unable to connect to server. Please check your internet connection.';
+            } else if (error.response?.data?.message) {
+              errorMessage = error.response.data.message;
+            } else if (error.message) {
+              errorMessage = error.message;
+            }
             
             set({
               isLoading: false,
