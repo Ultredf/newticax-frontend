@@ -29,7 +29,7 @@ import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const loginSchema = z.object({
-  email: z.string().email({ message: 'Please enter a valid email' }),
+  email: z.string().email({ message: 'Please enter a valid email address' }),
   password: z.string().min(1, { message: 'Password is required' }),
 });
 
@@ -78,7 +78,7 @@ export default function LoginPage() {
     <Card>
       <CardHeader>
         <CardTitle className="text-2xl text-center">Welcome to NewticaX</CardTitle>
-        <CardDescription className="text-center">Enter your credentials to sign in</CardDescription>
+        <CardDescription className="text-center">Sign in to your account to continue</CardDescription>
       </CardHeader>
       <CardContent>
         {error && (
@@ -94,9 +94,13 @@ export default function LoginPage() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Email Address</FormLabel>
                   <FormControl>
-                    <Input placeholder="john@example.com" type="email" {...field} />
+                    <Input 
+                      placeholder="Enter your email address (e.g., john@example.com)" 
+                      type="email" 
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -110,12 +114,27 @@ export default function LoginPage() {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <Input placeholder="••••••••" type="password" {...field} />
+                    <Input 
+                      placeholder="Enter your password" 
+                      type="password" 
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            <div className="flex items-center justify-between">
+              <div className="text-sm">
+                <Link 
+                  href="/forgot-password" 
+                  className="text-primary hover:underline"
+                >
+                  Forgot your password?
+                </Link>
+              </div>
+            </div>
 
             <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? 'Signing in...' : 'Sign in'}
@@ -141,16 +160,18 @@ export default function LoginPage() {
               variant="outline"
               onClick={handleGoogleLogin}
               className="w-full"
+              disabled
             >
-              Google
+              Google (Coming Soon)
             </Button>
             <Button
               type="button"
               variant="outline"
               onClick={handleGithubLogin}
               className="w-full"
+              disabled
             >
-              GitHub
+              GitHub (Coming Soon)
             </Button>
           </div>
         </div>

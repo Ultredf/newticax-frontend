@@ -35,17 +35,22 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-// Schema yang sesuai dengan Prisma schema
+// FIXED: Schema yang konsisten tanpa optional untuk language
 const registerSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
   username: z.string()
     .min(3, { message: 'Username must be at least 3 characters' })
-    .regex(/^[a-zA-Z0-9_]+$/, { message: 'Username can only contain letters, numbers, and underscores' })
-    .optional()
-    .or(z.literal('')), // Username is optional in Prisma
+    .max(30, { message: 'Username must be less than 30 characters' })
+    .regex(/^[a-zA-Z0-9_]+$/, { 
+      message: 'Username can only contain letters, numbers, and underscores' 
+    }),
   email: z.string().email({ message: 'Please enter a valid email' }),
-  password: z.string().min(6, { message: 'Password must be at least 6 characters' }),
-  language: z.enum(['ENGLISH', 'INDONESIAN']).default('ENGLISH'),
+  password: z.string()
+    .min(8, { message: 'Password must be at least 8 characters' })
+    .regex(/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, { 
+      message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number' 
+    }),
+  language: z.enum(['ENGLISH', 'INDONESIAN']), // FIXED: Removed .default() and .optional()
 });
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
@@ -66,7 +71,7 @@ export default function RegisterPage() {
       username: '',
       email: '',
       password: '',
-      language: 'ENGLISH',
+      language: 'ENGLISH', // FIXED: Set explicit default value
     },
   });
 
@@ -77,13 +82,8 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: RegisterFormValues) => {
     try {
-      // Prepare data for submission - remove empty username if not provided
-      const submitData = {
-        ...data,
-        username: data.username?.trim() || undefined, // Convert empty string to undefined
-      };
-      
-      await register(submitData);
+      // Data sudah valid dan konsisten, kirim langsung
+      await register(data);
       toast.success('Registration successful');
     } catch (err) {
       // Error is handled by the auth store and displayed below
@@ -103,12 +103,12 @@ export default function RegisterPage() {
     <Card>
       <CardHeader>
         <CardTitle className="text-2xl text-center">Create an Account</CardTitle>
-        <CardDescription className="text-center">Enter your details to sign up</CardDescription>
+        <CardDescription className="text-center">Join NewticaX to stay updated with the latest news</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-          <p className="text-sm text-red-600 dark:text-red-400">
-            <strong>Required fields:</strong> Name, email, and password are required. Username is optional.
+        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+          <p className="text-sm text-blue-600 dark:text-blue-400">
+            <strong>All fields are required.</strong> Please fill in your complete information to create your account.
           </p>
         </div>
 
@@ -128,7 +128,7 @@ export default function RegisterPage() {
                   <FormLabel>Full Name *</FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="Andries Al" 
+                      placeholder="Enter your full name (e.g., John Doe)" 
                       {...field} 
                       className="bg-blue-50 dark:bg-blue-900/20"
                     />
@@ -143,9 +143,13 @@ export default function RegisterPage() {
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Username (Optional)</FormLabel>
+                  <FormLabel>Username *</FormLabel>
                   <FormControl>
-                    <Input placeholder="andries_al" {...field} />
+                    <Input 
+                      placeholder="Choose a unique username (e.g., johndoe123)" 
+                      {...field}
+                      className="bg-blue-50 dark:bg-blue-900/20"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -157,9 +161,14 @@ export default function RegisterPage() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email *</FormLabel>
+                  <FormLabel>Email Address *</FormLabel>
                   <FormControl>
-                    <Input placeholder="andriesnrai@gmail.com" type="email" {...field} />
+                    <Input 
+                      placeholder="Enter your email address (e.g., john@example.com)" 
+                      type="email" 
+                      {...field}
+                      className="bg-blue-50 dark:bg-blue-900/20"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -173,7 +182,12 @@ export default function RegisterPage() {
                 <FormItem>
                   <FormLabel>Password *</FormLabel>
                   <FormControl>
-                    <Input placeholder="••••••••••••" type="password" {...field} />
+                    <Input 
+                      placeholder="Create a strong password (min 8 chars, 1 uppercase, 1 lowercase, 1 number)" 
+                      type="password" 
+                      {...field}
+                      className="bg-blue-50 dark:bg-blue-900/20"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -185,14 +199,14 @@ export default function RegisterPage() {
               name="language"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Preferred Language</FormLabel>
+                  <FormLabel>Preferred Language *</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    defaultValue={field.value}
+                    value={field.value} // FIXED: Use value instead of defaultValue
                   >
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a language" />
+                      <SelectTrigger className="bg-blue-50 dark:bg-blue-900/20">
+                        <SelectValue placeholder="Select your preferred language" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -229,16 +243,18 @@ export default function RegisterPage() {
               variant="outline"
               onClick={handleGoogleLogin}
               className="w-full"
+              disabled
             >
-              Google
+              Google (Coming Soon)
             </Button>
             <Button
               type="button"
               variant="outline"
               onClick={handleGithubLogin}
               className="w-full"
+              disabled
             >
-              GitHub
+              GitHub (Coming Soon)
             </Button>
           </div>
         </div>
